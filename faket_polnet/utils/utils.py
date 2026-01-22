@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import numpy as np
 import os
+from pathlib import Path
 from tqdm import tqdm
 import sys
 import numpy as np
@@ -9,7 +10,7 @@ import shutil
 import random
 import time
 import matplotlib.pyplot as plt
-import napari
+#import napari
 import mrcfile
 from skimage.metrics import structural_similarity as ssim, mean_squared_error
 
@@ -23,9 +24,7 @@ def transform_directory_structure(source_dir, target_dir_faket, target_dir_basic
         target_dir_faket (str): Path to the target directory for faket tomograms.
         target_dir_basic (str): Path to the target directory for basic tomograms.
     """
-    os.makedirs(target_dir_faket, exist_ok=True)
-    os.makedirs(target_dir_basic, exist_ok=True)
-
+    
     for folder in sorted(os.listdir(source_dir),key=lambda x: (int(x.split('_')[1]), int(x.split('_')[2]))):
         folder_path = os.path.join(source_dir, folder)
         if not os.path.isdir(folder_path):

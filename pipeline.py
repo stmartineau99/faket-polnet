@@ -8,12 +8,13 @@ import shutil
 import ssl
 import pandas as pd
 import argparse
+from pathlib import Path
 from ast import literal_eval
-from svnet.utils import get_absolute_paths,check_mrc_files
-from svnet.utils import project_micrographs,reconstruct_micrographs_only_recon3D,project_style_micrographs
-from svnet.utils import transform_directory_structure,copy_style_micrographs,compare_tomograms
-from svnet.utils import analyze_json_files,visualize_results,print_style_stats
-from svnet.utils import label_transform,find_labels_table,get_tomos_motif_list_paths
+from faket_polnet.utils.utils import get_absolute_paths,check_mrc_files
+from faket_polnet.utils.reconstruct import project_micrographs,reconstruct_micrographs_only_recon3D,project_style_micrographs
+from faket_polnet.utils.utils import transform_directory_structure,copy_style_micrographs,compare_tomograms
+from faket_polnet.utils.json import analyze_json_files,visualize_results,print_style_stats
+from faket_polnet.utils.label_transform import label_transform,find_labels_table,get_tomos_motif_list_paths
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -54,33 +55,38 @@ def parse_arguments():
 
 def validate_directories(base_dir, simulation_index, style_index):
     """Validate that required directories exist"""
-    simulation_dir = f"{base_dir}/simulation_dir_{simulation_index}"
-    style_tomo_dir = f"{base_dir}/style_tomograms_{style_index}"
-    style_dir = f"{base_dir}/faket_data/style_micrographs_{style_index}"
+    simulation_dir = base_dir / f"simulation_dir_{simulation_index}"
+    style_tomo_dir = base_dir / f"style_tomograms_{style_index}"
+    style_dir = base_dir / f"faket_data/style_micrographs_{style_index}"
     
-    if not os.path.exists(simulation_dir):
-        raise ValueError(f"Simulation directory not found: {simulation_dir}")
+    if not simulation_dir.exists():
+        raise ValueError(
+            f"ERROR Simulation directory not found: {simulation_dir}"
+            )
     
     # Check if either style_tomo_dir or style_dir exists
-    style_tomo_exists = os.path.exists(style_tomo_dir)
-    style_dir_exists = os.path.exists(style_dir)
+    style_tomo_exists = style_tomo_dir.exists()
+    style_dir_exists = style_dir.exists()
     
     if not style_tomo_exists and not style_dir_exists:
-        raise ValueError(f"Neither style tomogram directory {style_tomo_dir} nor style directory {style_dir} found. At least one must exist.")
-    
-    print(f"Found simulation directory: {simulation_dir}")
+        raise ValueError(
+            f"ERROR: Neither style tomogram directory {style_tomo_dir.relative_to(base_dir)} nor style directory {style_dir.relative_to(base_dir)} found in {base_dir}. At least one must exist."
+            )
+    print(f"Parent directory: {base_dir}")
+    print(f"Found simulation directory: {simulation_dir.relative_to(base_dir)}")
     if style_tomo_exists:
-        print(f"Found style tomogram directory: {style_tomo_dir}")
+        print(f"Found style tomogram directory: {style_tomo_dir.relative_to(base_dir)}")
     if style_dir_exists:
-        print(f"Found style directory: {style_dir}")
+        print(f"Found style directory: {style_dir.relative_to(base_dir)}")
     
     return simulation_dir, style_tomo_dir, style_dir, style_tomo_exists, style_dir_exists
 
 def main():
     args = parse_arguments()
-    
+    print(f"\n====== Run {args.simulation_index} ======\n")
+
     # Set base directory from arguments
-    base_dir = args.base_dir
+    base_dir = Path(args.base_dir)
     
     # Validate that required directories exist
     simulation_dir, style_tomo_dir, style_dir, style_tomo_exists, style_dir_exists = validate_directories(base_dir, args.simulation_index, args.style_index)
@@ -111,23 +117,24 @@ def main():
     print(f"seq_end is {seq_end}")
 
     # Simulation parameters
-    simulation_base_dir = f"{base_dir}/simulation_dir_{simulation_index}"
-    simulation_dirs = [os.path.join(simulation_base_dir, simulation_name)]
+    simulation_base_dir = base_dir / f"simulation_dir_{simulation_index}"
+    simulation_dirs = [simulation_base_dir / simulation_name]
     labels_table = find_labels_table(simulation_dirs)
 
     in_csv_list = sorted(get_tomos_motif_list_paths(simulation_base_dir))
-    out_dir = f"{base_dir}/train_directory_{train_dir_index}/overlay_{simulation_index}"
-    csv_dir_list = [os.path.join(d, "csv") for d in get_absolute_paths(simulation_base_dir)]
+    out_dir = base_dir / f"train_directory_{train_dir_index}/overlay_{simulation_index}"
+    csv_dir_list = [Path(d) / "csv" for d in get_absolute_paths(simulation_base_dir)]
 
-    out_base_dir_style = f"{base_dir}/style_micrographs_output_{style_index}"
+    out_base_dir_style = base_dir / f"style_micrographs_output_{style_index}"
 
     # Handle style directory logic
+    print("\n=== Style Micrograph Projection ===\n")
     if style_dir_exists:
         print("Style directory already exists, skipping projection and copy.")
     elif style_tomo_exists:
         # Only run projection if style_tomo_dir exists and style_dir doesn't exist
         print("Style tomogram directory found but style directory doesn't exist. Running projection...")
-        os.makedirs(out_base_dir_style, exist_ok=True)
+        out_base_dir_style.mkdir(parents=True, exist_ok=True)
         project_style_micrographs(style_tomo_dir, out_base_dir_style, tilt_range=tilt_range, ax="Y", cluster_run=False, projection_threshold=100)
         copy_style_micrographs(out_base_dir_style, style_dir, copy_flag=False)
         print(f"Style projection completed and copied to: {style_dir}")
@@ -136,26 +143,28 @@ def main():
         raise ValueError("No style directory available")
 
     # Label transformation
-    if not os.path.exists(out_dir):
+    if not out_dir.exists():
         label_transform(in_csv_list, out_dir, csv_dir_list, labels_table, mapping_flag=False)
-
+    
     # Project micrographs
-    out_base_dir_micrographs = f"{base_dir}/micrograph_directory_{micrograph_directory_index}/micrographs_output_dir_{micrograph_index}"
-    if not os.path.exists(out_base_dir_micrographs):
+    print("\n=== Simulation Micrograph Projection ===\n")
+    out_base_dir_micrographs = base_dir / f"micrograph_directory_{micrograph_directory_index}/micrographs_output_dir_{micrograph_index}"
+    if not out_base_dir_micrographs.exists():
         snr_list = project_micrographs(
             out_base_dir_micrographs, simulation_dirs, tilt_range=tilt_range,
             detector_snr=detector_snr, micrograph_threshold=30, reconstruct_3d=False,
             add_misalignment=True, simulation_threshold=1
         )
 
+    print("\n=== Style Transfer ===\n")    
     STYLE_DIR = style_dir  # Use the validated style directory
 
     # Define directories
-    CLEAN_DIR = f"{base_dir}/micrograph_directory_{micrograph_directory_index}/micrographs_output_dir_{micrograph_index}/Micrographs" 
-    OUTPUT_DIR = f"{base_dir}/micrograph_directory_{micrograph_directory_index}/faket_mics_style_transfer_{faket_index}"
+    CLEAN_DIR = base_dir / f"micrograph_directory_{micrograph_directory_index}/micrographs_output_dir_{micrograph_index}/Micrographs" 
+    OUTPUT_DIR = base_dir / f"micrograph_directory_{micrograph_directory_index}/faket_mics_style_transfer_{faket_index}"
 
     # Create OUTPUT_DIR if it doesn't exist
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Find all clean tomograms
     clean_tomograms = subprocess.run(f"find {CLEAN_DIR} -name 'tomo_mics_clean_*.mrc'", 
@@ -231,54 +240,64 @@ def main():
         except subprocess.CalledProcessError as e:
             print(f"Error running style transfer for {CLEAN_TOMOGRAM}: {e}")
             continue
-        except FileNotFoundError:
+        except FileNotFoundError: # TODO can remove this msg
             print("Error: faket not found. Please make sure faket is installed and available in your PATH")
             continue
 
     print("Style transfer completed for one index!")
 
-    base_dir_Micrographs = os.path.join(out_base_dir_micrographs, "Micrographs")
-    base_dir_TEM = os.path.join(out_base_dir_micrographs, "TEM")
-    base_dir_faket = f"{base_dir}/micrograph_directory_{micrograph_directory_index}/faket_mics_style_transfer_{faket_index}"
-    snr_list_dir = f"{base_dir}/micrograph_directory_{micrograph_directory_index}/snr_list_dir"
-    os.makedirs(snr_list_dir, exist_ok=True)
+    base_dir_Micrographs = out_base_dir_micrographs / "Micrographs"
+    base_dir_TEM = out_base_dir_micrographs / "TEM"
+    base_dir_faket = base_dir / f"micrograph_directory_{micrograph_directory_index}/faket_mics_style_transfer_{faket_index}"
+    snr_list_dir = base_dir / f"micrograph_directory_{micrograph_directory_index}/snr_list_dir"
+    snr_list_dir.mkdir(parents=True, exist_ok=True)
 
     # Check if directories exist before processing
-    if not os.path.exists(base_dir_TEM) or not os.path.exists(base_dir_Micrographs):
+    if not base_dir_TEM.exists() or not base_dir_Micrographs.exists():
         print(f"Required directories not found: {base_dir_TEM} or {base_dir_Micrographs}")
         return
 
-    tomograms = os.listdir(base_dir_TEM)
-    # Sorting function
-    sorted_tomograms = sorted(tomograms, key=lambda x: (int(x.split('_')[1]), int(x.split('_')[2])))
-    TEM_paths = [os.path.join(base_dir_TEM,tomogram) for tomogram in sorted_tomograms]
-    Micrograph_paths = [os.path.join(base_dir_Micrographs, f) for f in os.listdir(base_dir_Micrographs)]
-    Micrographs_sorted = sorted(os.listdir(base_dir_Micrographs),key=lambda x: (int(x.split('_')[1]), int(x.split('_')[2])))
-    Micrograph_paths = [os.path.join(base_dir_Micrographs,tomogram) for tomogram in Micrographs_sorted]
+    # TODO remove redundant
+    # tomograms = [p for p in base_dir_TEM.iterdir()]
+    
+    tomograms_sorted = sorted(
+        base_dir_TEM.iterdir(), 
+        key=lambda x: (int(x.name.split('_')[1]), int(x.name.split('_')[2]))
+        )
+    TEM_paths = tomograms_sorted
+
+
+    Micrographs_sorted = sorted(
+        base_dir_Micrographs.iterdir(),
+        key=lambda x: (int(x.name.split('_')[1]), int(x.name.split('_')[2]))
+        )
+    Micrograph_paths = Micrographs_sorted
 
     print(f"Micrograph Paths: {Micrograph_paths}")
     print(f"TEM Paths: {TEM_paths}")
+
     snr_list = []
     for path in Micrograph_paths:
-        if os.path.exists(path):
+        if path.exists():
             for micrograph_file in os.listdir(path):
                 if micrograph_file.split("_")[-2] != "clean":
                     snr = micrograph_file.split("_")[-1].split(".")
                     snr = snr[0] + "." + snr[1]
                     snr_list.append(float(snr))
-    with open(os.path.join(snr_list_dir, f"snr_list_{micrograph_index}.json"), "w") as file:
+    with (snr_list_dir / f"snr_list_{micrograph_index}.json").open("w") as file:
         json.dump(snr_list, file)
 
-    faket_paths = [f for f in os.listdir(base_dir_faket) if f.endswith(".mrc")]
+    faket_paths = [p for p in base_dir_faket.glob("*.mrc")]
+
     if faket_paths:
         # Sorting function
-        sorted_tomograms_faket = sorted(faket_paths, key=lambda x: (int(x.split('_')[4]), int(x.split('_')[5].split('.')[0])))
+        sorted_tomograms_faket = sorted(faket_paths, key=lambda x: (int(x.name.split('_')[4]), int(x.name.split('_')[5].split('.')[0])))
         print(sorted_tomograms_faket)
         
-        source_dir = f"{base_dir}/reconstructed_tomograms_{micrograph_index}"
-        target_dir_faket = f"{base_dir}/train_directory_{train_dir_index}/static_{micrograph_index}/ExperimentRuns_faket"
-        target_dir_basic = f"{base_dir}/train_directory_{train_dir_index}/static_{micrograph_index}/ExperimentRuns_basic"
-        faket_paths = [os.path.join(base_dir_faket,tomogram) for tomogram in sorted_tomograms_faket]
+        source_dir = base_dir / f"reconstructed_tomograms_{micrograph_index}"
+        target_dir_faket = base_dir / f"train_directory_{train_dir_index}/static_{micrograph_index}/ExperimentRuns_faket"
+        target_dir_basic = base_dir / f"train_directory_{train_dir_index}/static_{micrograph_index}/ExperimentRuns_basic"
+        faket_paths = sorted_tomograms_faket
         
         if not os.path.exists(target_dir_faket):
             reconstruct_micrographs_only_recon3D(TEM_paths, faket_paths, source_dir, snr_list, custom_mic=True, micrograph_threshold=100)
