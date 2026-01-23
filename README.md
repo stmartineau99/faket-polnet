@@ -27,17 +27,22 @@ This pipeline processes cryo-ET simulation data and applies neural style transfe
 - MPI (for parallel processing)
 
 ## Installation
+This package was built ontop of [faket](https://github.com/paloha/faket.git). All Python dependencies can be installed using the `environment-gpu.yaml`.
 
-1. Clone this repository:
 ```bash
-git clone https://github.com/ybo-source/fakET_polnet.git
+# clone this repository
+git clone https://github.com/stmartineau99/faket-polnet.git
+cd faket-polnet 
+
+conda create -n faket-polnet -f environment-gpu.yaml
+
+# activate environment and install faket-polnet
+conda activate faket-polnet 
+pip install .
+
+# or install in development mode:
+pip install -e .
 ```
-2. Install faket (follow instructions from the) [faket repository](https://github.com/paloha/faket.git)
-
-3. Activate faket-GPU environment
-
-
-
 ## Directory Structure
 
 Before running the pipeline, set up your directory structure as follows:
@@ -58,9 +63,32 @@ base_directory/
 
 ### Basic Usage
 
+**1. Download pretrained weights.**
+
+Faket uses a pretrained VGG19 model for neural style transfer.
+
+On most HPC systems, compute nodes do not have internet access, therefore it is recommended to first download the model weights using the login node before running the pipeline. Run the following command inside your environment:
+
+```bash
+python - <<'EOF'
+from torchvision.models import vgg19, VGG19_Weights
+vgg19(weights=VGG19_Weights.DEFAULT)
+EOF
+```
+The weights will be cached locally, and SLURM will automatically locate the cached file.
+
+**2. Running the pipeline.**
+
+The faket-polnet pipeline requires IMOD to be available on your `PATH`.
+ - For local systems, this means installing IMOD and ensuring its binaries are discoverable. 
+ - For HPC systems, IMOD is typically provided via an environment module and can be loaded inside the job script.
+
+Running the pipeline using the following:
 ```bash
 python pipeline.py /path/to/your/base_directory
 ```
+
+For running on an HPC system, an example SLURM submission script is provided under `slurm_scripts/sbatch_example.sh`.
 
 ### Advanced Usage with Custom Parameters
 
