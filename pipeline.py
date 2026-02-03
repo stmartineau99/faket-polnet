@@ -304,8 +304,9 @@ def main():
 
             print("\n=== Cleanup ===\n") 
 
-            collect_results_to_train_dir(source_dir, target_dir_faket, target_dir_basic, simulation_index, copy_flag=False)
-            dirs_to_remove = [source_dir]
+            collect_results_to_train_dir(source_dir, target_dir_faket, target_dir_basic, copy_flag=False)
+            #dirs_to_remove = [source_dir]
+            dirs_to_remove = []
 
             for dir in dirs_to_remove:
                 try:

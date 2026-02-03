@@ -56,46 +56,40 @@ def transform_directory_structure(source_dir, target_dir_faket, target_dir_basic
                     shutil.move(source_file_path, new_file_path)
                 print(f"Moved (basic): {source_file_path} → {new_file_path}")
 
-def collect_results_to_train_dir(source_dir, target_dir_faket, target_dir_basic, simulation_index, copy_flag = True):
+def collect_results_to_train_dir(source_dir, target_dir_faket, target_dir_basic, copy_flag = True):
     """
     Updated version of `transform_directory_structure`.
-    Move tomogram files into the correct directory structure, preserving parent dir names.
+    Collect tomogram files into the train directory.
 
     Parameters:
         source_dir (str): Path to the source directory containing reconstructed tomograms.
         target_dir_faket (str): Path to the target directory for faket tomograms.
         target_dir_basic (str): Path to the target directory for basic tomograms.
     """
-    
-    for folder in sorted(os.listdir(source_dir),key=lambda x: (int(x.split('_')[1]), int(x.split('_')[2]))):
-        folder_path = os.path.join(source_dir, folder)
-        if not os.path.isdir(folder_path):
-            continue
+    os.makedirs(target_dir_faket, exist_ok=True)
+    os.makedirs(target_dir_basic, exist_ok=True)
 
-        # Use the original folder name (e.g., tomogram_1_5)
-        for file in os.listdir(folder_path):
-            source_file_path = os.path.join(folder_path, file)
+    for root, _, files in os.walk(source_dir):
+        for file in files:
+            source_file_path = os.path.join(root, file)
 
             if file.endswith("_faket.mrc"):
-                # Preserve parent dir name
-                new_folder_path = os.path.join(target_dir_faket, folder)
-                os.makedirs(new_folder_path, exist_ok=True)
-                new_file_path = os.path.join(new_folder_path, file)
+                target_file_path = os.path.join(target_dir_faket, file)
+
                 if copy_flag:
-                    shutil.copy(source_file_path, new_file_path)
+                    shutil.copy(source_file_path, target_file_path)
                 else:
-                    shutil.move(source_file_path, new_file_path)
-                print(f"Moved (faket): {source_file_path} → {new_file_path}")
+                    shutil.move(source_file_path, target_file_path)
+                print(f"Moved (faket): {source_file_path} → {target_file_path}")
 
             elif file.endswith(".mrc") and not file.endswith("_faket.mrc"):
-                new_folder_path = os.path.join(target_dir_basic, folder)
-                os.makedirs(new_folder_path, exist_ok=True)
-                new_file_path = os.path.join(new_folder_path, file)
+                target_file_path = os.path.join(target_dir_basic, file)
+
                 if copy_flag:
-                    shutil.copy(source_file_path, new_file_path)
+                    shutil.copy(source_file_path, target_file_path)
                 else:
-                    shutil.move(source_file_path, new_file_path)
-                print(f"Moved (basic): {source_file_path} → {new_file_path}")
+                    shutil.move(source_file_path, target_file_path)
+                print(f"Moved (faket): {source_file_path} → {target_file_path}")
 
 def get_absolute_paths(parent_dir):
     """
