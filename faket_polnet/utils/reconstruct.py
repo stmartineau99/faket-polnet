@@ -222,4 +222,3 @@ def project_style_micrographs(style_tomo_dir, out_base_dir, tilt_range=(-60, 60,
         if projection_count > projection_threshold:
             print("Projection threshold has been reached ")
             break
-

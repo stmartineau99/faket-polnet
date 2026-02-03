@@ -7,7 +7,7 @@ import numpy as np
 import shutil
 import ssl
 import pandas as pd
-import argparse
+import configargparse
 from pathlib import Path
 from ast import literal_eval
 from faket_polnet.utils.utils import get_absolute_paths,check_mrc_files
@@ -20,11 +20,17 @@ from faket_polnet.utils.faket_wrapper import style_transfer_wrapper
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Run the complete pipeline with configurable parameters')
+def parse_args():
+    parser = configargparse.ArgParser(
+        config_file_parser_class=configargparse.TomlConfigParser(["tool.faket"])
+    )
+    # Input configuration file (TOML)
+    parser.add_argument("--config", type=str, default=None, is_config_file_arg=True,
+                        help="Path to TOML configuration file.")
     
     # Required argument
-    parser.add_argument('base_dir', type=str, help='Base directory containing simulation and style directories')
+    parser.add_argument('--base_dir', type=str, required=True,
+                        help='Base directory containing simulation and style directories')
     
     # Index parameters
     parser.add_argument('--micrograph_index', type=int, default=0, help='Micrograph index')
@@ -37,14 +43,13 @@ def parse_arguments():
     
     # Tilt range parameters
     parser.add_argument('--tilt_start', type=int, default=-60, help='Tilt series start angle')
-    parser.add_argument('--tilt_end', type=int, default=60, help='Tilt series end angle')
+    parser.add_argument('--tilt_stop', type=int, default=60, help='Tilt series stop angle')
     parser.add_argument('--tilt_step', type=int, default=3, help='Tilt series step size')
     
     # Other parameters
     parser.add_argument('--detector_snr', type=float, nargs=2, default=[0.15, 0.20], help='Detector SNR range')
     parser.add_argument('--denoised', action='store_true', help='Use denoised style micrographs')
     parser.add_argument('--random_faket', action='store_true', default=True, help='Use random faket style transfer')
-    parser.add_argument('--simulation_name', type=str, default="all_v_czii", help='Simulation name')
     
     # Faket parameters
     parser.add_argument('--faket_gpu', type=int, default=0, help='GPU device ID for faket')
@@ -84,8 +89,9 @@ def validate_directories(base_dir, simulation_index, style_index):
     return simulation_dir, style_tomo_dir, style_dir, style_tomo_exists, style_dir_exists
 
 def main():
-    args = parse_arguments()
-    print(f"\n====== Run {args.simulation_index} ======\n")
+    args = parse_args()
+
+    print(f"\n====== Simulation {args.simulation_index} ======\n")
 
     # Set base directory from arguments
     base_dir = Path(args.base_dir)
@@ -101,11 +107,10 @@ def main():
     faket_index = args.faket_index
     train_dir_index = args.train_dir_index
     static_index = args.static_index
-    tilt_range = (args.tilt_start, args.tilt_end, args.tilt_step)
+    tilt_range = (args.tilt_start, args.tilt_stop + 1, args.tilt_step)
     detector_snr = args.detector_snr
     denoised = args.denoised
     random_faket = args.random_faket
-    simulation_name = args.simulation_name
     
     # Faket parameters
     faket_gpu = args.faket_gpu
@@ -119,12 +124,15 @@ def main():
     print(f"tilt_range: {tilt_range}")
     print(f"seq_end: {seq_end}")
 
+    # TODO refactoring - only one simulation_dir per run (polnet simulation condition)
     # Simulation parameters
     simulation_base_dir = base_dir / f"simulation_dir_{simulation_index}"
-    simulation_dirs = [simulation_base_dir / simulation_name]
+    simulation_dirs = [simulation_base_dir]
     labels_table = find_labels_table(simulation_dirs)
 
+    # TODO refactoring - this logic seems unncessary since we only have one input csv dir per run
     in_csv_list = sorted(get_tomos_motif_list_paths(simulation_base_dir))
+    print(in_csv_list) #TODO debug
     out_dir = base_dir / f"train_directory_{train_dir_index}/overlay_{simulation_index}"
     csv_dir_list = [Path(d) / "csv" for d in get_absolute_paths(simulation_base_dir)]
 
@@ -284,12 +292,10 @@ def main():
     if faket_paths:
         # Sorting function
         sorted_tomograms_faket = sorted(faket_paths, key=lambda x: (int(x.name.split('_')[4]), int(x.name.split('_')[5].split('.')[0])))
-        #print(sorted_tomograms_faket)
         
-        # refactoring: converted Path objects back to str
         source_dir = f"{base_dir}/reconstructed_tomograms_{micrograph_index}"
-        target_dir_faket = f"{base_dir}/train_directory_{train_dir_index}/static_{micrograph_index}/ExperimentRuns_faket"
-        target_dir_basic = f"{base_dir}/train_directory_{train_dir_index}/static_{micrograph_index}/ExperimentRuns_basic"
+        target_dir_faket = f"{base_dir}/train_directory_{train_dir_index}/static_{simulation_index}/ExperimentRuns_faket"
+        target_dir_basic = f"{base_dir}/train_directory_{train_dir_index}/static_{simulation_index}/ExperimentRuns_basic"
         faket_paths = [str(p) for p in sorted_tomograms_faket]
         
         if not os.path.exists(target_dir_faket):
@@ -297,7 +303,8 @@ def main():
             reconstruct_micrographs_only_recon3D(TEM_paths, faket_paths, source_dir, snr_list, custom_mic=False, micrograph_threshold=100)
 
             print("\n=== Cleanup ===\n") 
-            transform_directory_structure(source_dir, target_dir_faket, target_dir_basic, copy_flag=False)
+            # TODO what is the point of this
+            #transform_directory_structure(source_dir, target_dir_faket, target_dir_basic, copy_flag=False)
             try:
                 shutil.rmtree(source_dir)
                 print(f"Successfully deleted the directory: {source_dir}\n")

@@ -17,6 +17,8 @@ from skimage.metrics import structural_similarity as ssim, mean_squared_error
 
 def transform_directory_structure(source_dir, target_dir_faket, target_dir_basic,copy_flag = True):
     """
+    THIS FUNCTION IS DEPRECATED.
+    
     Move tomogram files into the correct directory structure, preserving parent dir names.
 
     Parameters:
