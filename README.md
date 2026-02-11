@@ -34,7 +34,7 @@ This package was built ontop of [faket](https://github.com/paloha/faket.git). Al
 git clone https://github.com/stmartineau99/faket-polnet.git
 cd faket-polnet 
 
-conda create -n faket-polnet -f environment-gpu.yaml
+conda create -n faket-polnet -f environment-gpu.yaml --channel-priority flexible
 
 # activate environment and install faket-polnet
 conda activate faket-polnet 
@@ -49,14 +49,12 @@ Before running the pipeline, set up your directory structure as follows:
 
 ```
 base_directory/
-├── simulation_dir_<simulation_index>/          # Simulation data (Required-from polnet)
-│   └── all_v_czii/           # Simulation name
+├── simulation_dir_<simulation_index>/     # Simulation data (Required, from polnet)
 ├── style_tomograms_<style_index>/         # Style tomograms for projection (Required)
 ├── faket_data/
-│   └── style_micrographs_0/   # Projected style micrographs (auto-created)
-├── micrograph_directory_0/    # Output directories (auto-created)
-├── train_directory_0/         # Training data (auto-created)
-└── pipeline.py               # This script
+│   └── style_micrographs_0/               # Projected style micrographs (auto-created)
+├── micrograph_directory_0/                # Output directories (auto-created)
+├── train_directory_<train_dir_index>/     # Training data (auto-created)
 ```
 
 ## Usage
@@ -94,12 +92,9 @@ For running on an HPC system, an example SLURM submission script is provided und
 
 ```bash
 python pipeline.py /path/to/your/base_directory \
-    --micrograph_index 0 \
     --style_index 0 \
     --simulation_index 0 \
-    --faket_index 0 \
     --train_dir_index 0 \
-    --static_index 0 \
     --tilt_start -60 \
     --tilt_end 60 \
     --tilt_step 3 \
@@ -117,17 +112,13 @@ python pipeline.py /path/to/your/base_directory \
 - `base_dir`: Base directory containing simulation and style directories
 
 #### Index Parameters
-- `--micrograph_index`: Micrograph index (default: 0)
 - `--style_index`: Style index (default: 0)
-- `--micrograph_directory_index`: Micrograph directory index (default: 0)
 - `--simulation_index`: Simulation index (default: 0)
-- `--faket_index`: Faket index (default: 0)
 - `--train_dir_index`: Train directory index (default: 0)
-- `--static_index`: Static index (default: 0)
 
 #### Tilt Series Parameters
 - `--tilt_start`: Tilt series start angle (default: -60)
-- `--tilt_end`: Tilt series end angle (default: 60)
+- `--tilt_end`: Tilt series stop angle (default: 60)
 - `--tilt_step`: Tilt series step size (default: 3)
 
 #### Simulation Parameters
@@ -159,19 +150,17 @@ After successful execution, the pipeline creates:
 
 ```
 base_directory/
-├── micrograph_directory_{index}/
+├── micrograph_directory_{index}/           # Temporary (removed during cleanup)
 │   ├── micrographs_output_dir_{index}/
-│   │   ├── Micrographs/          # Projected micrographs
-│   │   └── TEM/                  # TEM simulations
-│   ├── faket_mics_style_transfer_{index}/  # Style-transferred tomograms
-│   └── snr_list_dir/             # SNR metadata
-├── style_micrographs_output_{index}/       # Temporary style projection
-├── faket_data/
-│   └── style_micrographs_{index}/ # Final style micrographs
+│   │   ├── Micrographs/                    # Projected micrographs
+│   │   └── TEM/                            # TEM simulations
+│   └── faket_mics_style_transfer_{index}/  # Style-transferred tomograms
+├── style_micrographs_{index}/              # Final style micrographs
 └── train_directory_{index}/
-    └── static_{index}/
-        ├── ExperimentRuns_faket/  # Style-transferred training data
-        └── ExperimentRuns_basic/  # Basic training data
+    ├── faket_tomograms/                    # Style-transferred tomograms
+    ├── overlay/                            # Labels
+    └── snr_list_dir/                       # SNR metadata
+
 ```
 
 ## Customization
