@@ -51,8 +51,7 @@ Before running the pipeline, set up your directory structure as follows:
 base_directory/
 ├── simulation_dir_<simulation_index>/     # Simulation data (Required, from polnet)
 ├── style_tomograms_<style_index>/         # Style tomograms for projection (Required)
-├── faket_data/
-│   └── style_micrographs_0/               # Projected style micrographs (auto-created)
+├── style_micrographs_0/                   # Projected style micrographs (auto-created)
 ├── micrograph_directory_0/                # Output directories (auto-created)
 ├── train_directory_<train_dir_index>/     # Training data (auto-created)
 ```
@@ -99,7 +98,6 @@ python pipeline.py /path/to/your/base_directory \
     --tilt_end 60 \
     --tilt_step 3 \
     --detector_snr 0.15 0.20 \
-    --simulation_name "all_v_czii" \
     --faket_gpu 0 \
     --faket_iterations 5 \
     --faket_step_size 0.15 \
@@ -123,7 +121,6 @@ python pipeline.py /path/to/your/base_directory \
 
 #### Simulation Parameters
 - `--detector_snr`: Detector SNR range (default: [0.15, 0.20])
-- `--simulation_name`: Simulation name (default: "all_v_czii")
 
 #### Style Transfer Parameters
 - `--faket_gpu`: GPU device ID for faket (default: 0)
@@ -185,7 +182,7 @@ python pipeline.py /path/to/base_directory \
 ### Using Pre-projected Style Micrographs
 
 If you already have style micrographs, place them in:
-`base_directory/faket_data/style_micrographs_{index}/`
+`base_directory/style_micrographs_{index}/`
 The pipeline will skip projection and use them directly.
 
 ## Troubleshooting
