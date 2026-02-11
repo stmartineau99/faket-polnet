@@ -147,13 +147,13 @@ After successful execution, the pipeline creates:
 
 ```
 base_directory/
-├── micrograph_directory_{index}/           # Temporary (removed during cleanup)
-│   ├── micrographs_output_dir_{index}/
+├── micrograph_dir_{index}/                 # Temporary (removed during cleanup)
+│   ├── content_micrographs_{index}/
 │   │   ├── Micrographs/                    # Projected micrographs
 │   │   └── TEM/                            # TEM simulations
-│   └── faket_mics_style_transfer_{index}/  # Style-transferred tomograms
+│   └── faket_micrographs_{index}/          # Style-transferred tomograms
 ├── style_micrographs_{index}/              # Final style micrographs
-└── train_directory_{index}/
+└── train_dir_{index}/
     ├── faket_tomograms/                    # Style-transferred tomograms
     ├── overlay/                            # Labels
     └── snr_list_dir/                       # SNR metadata
