@@ -12,7 +12,7 @@
 #   2) Make sure this script is executable, then run with:
 #        ./submit_polnet_faket.sh
 # 
-# Requirments:
+# Requirements:
 #   - polnet-synaptic environment
 #   - polnet-faket environment
 ################################################################################
