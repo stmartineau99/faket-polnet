@@ -13,14 +13,7 @@ This pipeline processes cryo-ET simulation data and applies neural style transfe
 - Training data organization for downstream tasks
 
 ## Requirements
-
-### Core Dependencies
-- Python 3.7+
-- NumPy
-- Pandas
-- scikit-learn
-- [faket](https://github.com/paloha/faket.git)
-- IMOD containing system
+- [IMOD](https://bio3d.colorado.edu/imod/doc/guide.html) must be installed on the system since the pipeline calls to some of its standalone commands.
 
 ### Optional Dependencies
 - CUDA-enabled GPU (recommended for faster style transfer)
@@ -84,24 +77,13 @@ Running the pipeline using the following:
 ```bash
 python pipeline.py /path/to/your/base_directory
 ```
+### Running the Pipeline with Configuration Files
+The pipeline.py has been setup to work with TOML configuration files. An example config file can be found at configs/czii.toml. 
 
-For running on an HPC system, an example SLURM submission script is provided under `slurm_scripts/sbatch_example.sh`.
-
-### Advanced Usage with Custom Parameters
+An example SLURM submission script can be found at slurm_scripts/sbatch_polnet_faket.sh. 
 
 ```bash
-python pipeline.py /path/to/your/base_directory \
-    --style_index 0 \
-    --simulation_index 0 \
-    --train_dir_index 0 \
-    --tilt_start -60 \
-    --tilt_end 60 \
-    --tilt_step 3 \
-    --detector_snr 0.15 0.20 \
-    --faket_gpu 0 \
-    --faket_iterations 5 \
-    --faket_step_size 0.15 \
-    --random_faket
+python pipeline.py /path/to/config.toml
 ```
 
 ### Parameters
@@ -116,7 +98,7 @@ python pipeline.py /path/to/your/base_directory \
 
 #### Tilt Series Parameters
 - `--tilt_start`: Tilt series start angle (default: -60)
-- `--tilt_end`: Tilt series stop angle (default: 60)
+- `--tilt_stop`: Tilt series stop angle (default: 60)
 - `--tilt_step`: Tilt series step size (default: 3)
 
 #### Simulation Parameters
