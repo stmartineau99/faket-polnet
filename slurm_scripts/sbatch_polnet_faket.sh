@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# Description: Simulation pipeline for cryo-ET data. 
+# Description: Integrated polnet-faket pipeline for cryo-ET data simulation. 
 #              Resource allocation designed for generating 20 tomograms with CZII shape.
 # Author: Sage Martineau
 # Date: 10-02-2026
