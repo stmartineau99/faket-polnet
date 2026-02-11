@@ -1,7 +1,7 @@
 [tool.polnet]
-out_dir = "/mnt/lustre-grete/projects/nim00020/sage/data/simulation/testing/czii"
+out_dir = "/mnt/lustre-grete/projects/nim00020/sage/data/simulation/test_dataset/simulation_dir_0"
 seed = 0
-ntomos = 3
+ntomos = 20
 voi_vsize = 10 
 voi_shape = [630, 630, 184]
 
@@ -22,7 +22,8 @@ disable_membranes = true
 disable_helix = true
 
 [tool.faket]
-base_dir = "/mnt/lustre-grete/projects/nim00020/sage/data/testing/czii"
+base_dir = "/mnt/lustre-grete/projects/nim00020/sage/data/test_dataset"
+style_index = 0
 simulation_index = 0
 train_dir_index = 0
 czii_directory_structure = True

@@ -35,7 +35,6 @@ def parse_args():
     # Index parameters
     #parser.add_argument('--micrograph_index', type=int, default=0, help='Micrograph index')
     parser.add_argument('--style_index', type=int, default=0, help='Style index')
-    parser.add_argument('--micrograph_dir_index', type=int, default=0, help='Micrograph directory index')
     parser.add_argument('--simulation_index', type=int, default=0, help='Simulation index')
     #parser.add_argument('--faket_index', type=int, default=0, help='Faket index')
     parser.add_argument('--train_dir_index', type=int, default=0, help='Train directory index')
@@ -103,7 +102,6 @@ def main():
     # Set parameters from arguments
     #micrograph_index = args.micrograph_index
     style_index = args.style_index
-    micrograph_dir_index = args.micrograph_dir_index # should be the same as train_dir_index
     simulation_index = args.simulation_index
     #faket_index = args.faket_index
     train_dir_index = args.train_dir_index
@@ -137,7 +135,7 @@ def main():
 
     # Handle style directory logic
     print("\n=== Style Micrograph Projection ===\n")
-    micrographs_base_dir = base_dir / f"micrograph_dir_{micrograph_dir_index}"
+    micrographs_base_dir = base_dir / f"micrograph_dir_{simulation_index}"
     style_mics_out_dir = micrographs_base_dir / f"style_micrographs_{style_index}"
 
     if style_dir_exists:
@@ -162,7 +160,7 @@ def main():
     
     # Project content micrographs
     print("\n=== Simulation Micrograph Projection ===\n")
-    content_mics_out_dir = micrographs_base_dir / f"content_micrographs_dir_{simulation_index}"
+    content_mics_out_dir = micrographs_base_dir / f"content_micrographs_{simulation_index}"
     
     if not content_mics_out_dir.exists():
         snr_list = project_content_micrographs(
