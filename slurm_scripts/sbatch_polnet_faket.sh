@@ -1,5 +1,5 @@
 #!/bin/bash
-################################################################################
+########################################################################################################
 # Description: Integrated polnet-faket pipeline for cryo-ET data simulation. 
 #              Resource request selected for generating 20 tomograms with CZII shape (630, 630, 184).
 # Author: Sage Martineau
@@ -20,7 +20,7 @@
 #   CPUs per task: 8
 #   Memory: 40G
 #   GPU: 1g.20gb
-################################################################################
+########################################################################################################
 
 #SBATCH -p grete:interactive
 #SBATCH --job-name=JOB_NAME
